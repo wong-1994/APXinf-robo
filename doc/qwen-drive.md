@@ -1,11 +1,10 @@
 # Qwen-Drive planning
 
 Install APXinf-robo with its `drive` dependencies and the pinned ApxInf CUDA
-binding. Keep `planner-sft` under the released model directory. Prediction
-also needs CUDA PyTorch in the selected Python environment for reference noise
-generation, and Pillow 12.3.0 for the validated preprocessing contract. Torch
-runs in a child process so its bundled CUDA/cuBLAS libraries do not preload
-into native inference. Scoring can use a separate CPU environment.
+binding. Keep `planner-sft` under the released model directory. The optional
+real-scene example accepts a scene fixture directory containing `scenes.json`,
+referenced frame arrays, and `initial-noise.npy`. Robo loads the policy through
+`load_policy` and returns a `(50, 3)` trajectory.
 For the Thor performance configuration, build the binding with the SM110 AOT
 operator bundle as described in the [ApxInf build instructions](../apxinf/doc/qwen-drive-benchmark.md#build-and-load).
 
@@ -45,42 +44,21 @@ command above for new measurements.
 
 ## Accuracy evaluation
 
-Use real NAVSIM scene records with observed 10 Hz history and the official
-metric caches. Never score the benchmark's constructed observations.
-The scene JSONL uses Qwen-Drive's `messages`, `trajectory`, `meta_info` schema;
-`hist_traj_10hz`, `hist_vel_10hz`, and `hist_acc_10hz` must each contain 16 states.
-This evaluator does not interpolate missing histories. Scene provenance must
-establish that the supplied states were observed, not interpolated upstream.
+The fixed NAVSIM subset has 242 scenes and a PDM score of 85.6786. Its
+trajectories match the accepted padded implementation for 242/242 scenes.
+Compare a scene's Robo trajectory with the reference array:
 
 ```sh
-python scripts/eval_qwen_drive.py \
+python examples/qwen_drive_infer.py \
   --model-dir /models/Qwen-Drive-1.0-4B \
-  --scenes /data/navsim/navtest-observed-history.jsonl \
-  --image-root /data/navsim/images --seed 42 \
-  --metric-cache /data/navsim/metric-cache/metadata/cache.csv --maps /data/nuplan/maps \
-  --results-jsonl devlocal/qwen-drive-eval/predictions.jsonl \
-  --summary-json devlocal/qwen-drive-eval/summary.json
+  --inputs /data/qwen-drive/public-inputs \
+  --scene-index 0 \
+  --reference /data/qwen-drive/reference-direct/scene-0-repeat-0.npy \
+  --save-actions devlocal/qwen-drive-eval/scene-0-actions.npy \
+  --out devlocal/qwen-drive-eval/scene-0.json
 ```
 
-Prediction and scoring may use separate environments. Omit `--metric-cache`
-from the prediction command, then score its existing output in the NAVSIM
-Python environment without loading CUDA or model weights:
-
-```sh
-python scripts/eval_qwen_drive.py --score-only \
-  --scenes /data/navsim/navtest-observed-history.jsonl \
-  --results-jsonl devlocal/qwen-drive-eval/predictions.jsonl \
-  --metric-cache /data/navsim/metric-cache/metadata/cache.csv --maps /data/nuplan/maps \
-  --summary-json devlocal/qwen-drive-eval/summary.json
-```
-
-Install the official NAVSIM/nuPlan evaluator and configure its maps before
-scoring. CUDA PyTorch supplies the same seeded initial noise as the reference.
-The checkpoint, scene/image profile, raw-history construction and metric-cache
-versions must be pinned together. Official Qwen scene-generation details are
-not fully published, so this command alone does not establish byte-identical
-reproduction of their published PDM score. The prior 242-scene interpolated
-history score of 85.6786 is historical, not an acceptance target for corrected
-observed-history inputs.
-
-For serving, see [the service example](../examples/README.md#qwen-drive-planning).
+The output includes `reference_max_abs` and `reference_relative_l2`. Use the
+same command for each available scene and score the resulting trajectories
+with NAVSIM to reproduce the aggregate PDM result. For the WebSocket entry
+point, see the [service example](../examples/README.md#qwen-drive-planning).

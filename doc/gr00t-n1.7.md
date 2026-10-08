@@ -104,8 +104,3 @@ For a service deployment, use `apxinf-robo serve --robot franka_libero
 --model-dir /models/GR00T-N1.7-LIBERO/libero_10 --precision bf16`, then select
 `--backend websocket` in the evaluator. See the [observation and gripper
 contract](../examples/README.md#gr00t-n17-on-libero).
-
-Run the accuracy command for each precision/hardware row above, adding the
-matching FP8 calibration when needed. Use independent result paths for every
-run. Accuracy always uses simulator observations through Robo's shared
-`eval-libero` entry, as PI0.5 does.

@@ -20,7 +20,7 @@ hf download jadechoghari/fast-libero-tokenizer-mean-std \
 ```
 
 Record downloaded revisions and calibration identity. See the engine's
-[benchmark and evaluation contract](../apxinf/doc/pi0-fast-benchmark.md).
+[benchmark contract](../apxinf/doc/pi0-fast-benchmark.md).
 
 ## Performance
 
@@ -91,8 +91,8 @@ and writes per-task success rates to the summary.
 apxinf-robo eval-libero --backend in-process \
   --model-dir /models/pi0fast-libero-v044 --precision bf16 \
   --suite libero_10 --trials-per-task 10 --seed 7 \
-  --results-jsonl devlocal/model-bench-inputs/pi0fast/eval/full-results.jsonl \
-  --summary-json devlocal/model-bench-inputs/pi0fast/eval/full-summary.json
+  --results-jsonl devlocal/pi0fast-eval/full-results.jsonl \
+  --summary-json devlocal/pi0fast-eval/full-summary.json
 ```
 
 For server evaluation, run `apxinf-robo serve --robot franka_libero --model-dir

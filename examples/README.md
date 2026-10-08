@@ -211,7 +211,16 @@ planner. Run the constructed-input benchmark without scene files:
 python scripts/bench_qwen_drive.py --model-dir /models/Qwen-Drive-1.0-4B
 ```
 
-Use [the Qwen-Drive guide](../doc/qwen-drive.md) for real-data NAVSIM evaluation.
+For a real scene with a prepared input directory, use the existing example:
+
+```sh
+python examples/qwen_drive_infer.py \
+  --model-dir /models/Qwen-Drive-1.0-4B \
+  --inputs /path/to/public-inputs
+```
+
+See [the Qwen-Drive guide](../doc/qwen-drive.md#accuracy-evaluation) for its
+reference comparison command.
 
 To serve the same planning policy over Robo's OpenPI-compatible WebSocket
 transport, omit the robot preset and supply its planner:
