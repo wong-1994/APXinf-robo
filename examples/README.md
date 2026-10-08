@@ -219,8 +219,8 @@ python examples/qwen_drive_infer.py \
   --inputs /path/to/public-inputs
 ```
 
-See [the Qwen-Drive guide](../doc/qwen-drive.md#accuracy-evaluation) for its
-reference comparison command.
+See [the Qwen-Drive guide](../doc/qwen-drive.md#accuracy-evaluation) for the
+full NAVSIM evaluator and its scoring command.
 
 To serve the same planning policy over Robo's OpenPI-compatible WebSocket
 transport, omit the robot preset and supply its planner:
