@@ -33,7 +33,8 @@ def test_engine_benchmark_keeps_caller_paths_and_engine_tactics(tmp_path, monkey
     caller.mkdir()
     monkeypatch.chdir(caller)
     argv = ["bench_gr00t.py", "--model-dir", "model", "--tactics=run/tactics.json",
-            "--binary", "bin/gr00t_bench", "--out", "run/report.json"]
+            "--binary", "bin/gr00t_bench", "--frames", "run/frames.npz",
+            "--out", "run/report.json"]
     monkeypatch.setattr(sys, "argv", argv)
     previous_path = sys.path[:]
 
@@ -45,6 +46,7 @@ def test_engine_benchmark_keeps_caller_paths_and_engine_tactics(tmp_path, monkey
     assert probe["argv"] == [
         "bench_gr00t.py", "--model-dir", str(caller / "model"),
         f"--tactics={caller / 'run/tactics.json'}", "--binary", str(caller / "bin/gr00t_bench"),
+        "--frames", str(caller / "run/frames.npz"),
         "--out", str(caller / "run/report.json"),
     ]
     assert Path.cwd() == caller

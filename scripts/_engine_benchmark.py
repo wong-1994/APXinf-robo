@@ -5,7 +5,7 @@ import os
 import sys
 
 
-_PATH_OPTIONS = frozenset(("--model-dir", "--calibration", "--tactics", "--out", "--binary"))
+_PATH_OPTIONS = frozenset(("--model-dir", "--calibration", "--tactics", "--out", "--binary", "--frames"))
 
 
 def _absolute_paths(argv, cwd):

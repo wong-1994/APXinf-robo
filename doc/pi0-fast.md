@@ -24,8 +24,9 @@ Record downloaded revisions and calibration identity. See the engine's
 
 ## Performance
 
-Two views, 224×224 RGB, batch 1. Prefix and per-token latency is fitted from
-the same constructed input with verified token stopping points, as in the [PI0-FAST benchmark](../apxinf/scripts/bench_pi0_fast.py):
+Two views, 224×224 RGB, batch 1. The table retains the previously published
+Prefix and Per Token values. The [ApxInf benchmark](../apxinf/scripts/bench_pi0_fast.py)
+reports these fields from a fit over frames with distinct generated token counts:
 
 | Hardware | Precision | Prefix | Per Token |
 |---|---|---:|---:|
@@ -34,36 +35,48 @@ the same constructed input with verified token stopping points, as in the [PI0-F
 | Jetson AGX Orin | BF16 | 117.3 ms | 25.34 ms |
 | RTX 4090 | BF16 | 20.9 ms | 5.24 ms |
 
-The table retains the previously published results. Use the command below for
-new measurements on each hardware and precision.
-
-The benchmark uses deterministic constructed camera images and state. It calls
-the pinned engine benchmark through Robo's policy loader and requires no frame
-archive. Both repositories accept the same command arguments:
+The Robo entry point calls the pinned ApxInf benchmark through Robo's policy
+loader. By default, ApxInf constructs deterministic camera images and state, so
+the following complete-request latency check requires no frame archive. Both
+repositories accept the same arguments:
 
 ```sh
 python scripts/bench_pi0_fast.py \
   --model-dir /models/pi0fast-libero-v044 --precision bf16 \
-  --state-key observation/state --layer l1 --mode all \
-  --frames-count 1 --repeats 5 --warmup 10 --samples 30 \
+  --state-key observation/state --layer l1 --mode latency \
+  --frames-count 10 --warmup 10 --samples 30 \
   --tactics devlocal/pi0fast-eval/thor-bf16-tactics.json --autotune \
   --out devlocal/pi0fast-eval/latency.json
 ```
 
-This covers Thor, Orin and RTX 4090 BF16. On Thor, repeat with `--precision fp8`
-and `--calibration /path/to/matching-calibration.json` for the FP8 row. Use a
-separate output and tactic path for each device and precision. Generate the
-native GEMV/GEMM database with `--autotune` once; omit that flag and reuse
-`--tactics` for subsequent measurements. FP8 calibration is a separate artifact.
-The database's toolkit/device/kernel identity must match the tested binary.
+Run the same latency check on Thor, Orin and RTX 4090 BF16. On Thor, repeat with
+`--precision fp8` and `--calibration /path/to/matching-calibration.json` for
+FP8. Use a separate output and tactic path for each device and precision.
+Generate the native GEMV/GEMM database with `--autotune` once; omit that flag
+and reuse `--tactics` for subsequent measurements. FP8 calibration is a
+separate artifact. The database's toolkit/device/kernel identity must match
+the tested binary.
 
+To obtain a Prefix / Per Token fit using the original measurement method,
+supply recorded LIBERO frames with varying decode lengths:
 
-The report retains latency samples and token counts. Prefix/per-token fitting
-uses the same constructed observation at verified token stopping points; it
-fails if fewer than two distinct decode lengths are available. Do not report
-full-request latency as prefix latency. Lock clocks/fan, exclude other GPU work
-and record the exact engine binary and calibration identity. Historical values
-require new measurements before they are claimed for constructed inputs.
+```sh
+python scripts/bench_pi0_fast.py \
+  --model-dir /models/pi0fast-libero-v044 --precision bf16 \
+  --state-key observation/state --layer l1 --mode ar \
+  --frames /path/to/libero_frames.npz --frame-variant raw \
+  --survey 20 --repeats 5 \
+  --tactics devlocal/pi0fast-eval/thor-bf16-tactics.json \
+  --out devlocal/pi0fast-eval/ar.json
+```
+
+The optional `.npz` must contain camera, state and task arrays in the format
+described by the [engine contract](../apxinf/doc/pi0-fast-benchmark.md). Robo
+resolves `--frames` relative to the caller's directory before invoking ApxInf.
+The fit is present only if at least two token lengths occur. The input-free
+latency command does not reproduce the table's Prefix / Per Token values.
+Lock clocks/fan, exclude other GPU work and record the exact engine binary,
+tactics, calibration and input identities when comparing historical results.
 
 ## Accuracy evaluation
 
