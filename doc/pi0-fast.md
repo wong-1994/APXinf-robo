@@ -38,24 +38,27 @@ reports these fields from a fit over frames with distinct generated token counts
 The Robo entry point calls the pinned ApxInf benchmark through Robo's policy
 loader. By default, ApxInf constructs deterministic camera images and state, so
 the following complete-request latency check requires no frame archive. Both
-repositories accept the same arguments:
+repositories accept the same arguments. PI0-FAST times its autoregressive native
+call; its runtime does not implement captured CUDA Graph replay:
 
 ```sh
 python scripts/bench_pi0_fast.py \
   --model-dir /models/pi0fast-libero-v044 --precision bf16 \
   --state-key observation/state --layer l1 --mode latency \
   --frames-count 10 --warmup 10 --samples 30 \
-  --tactics devlocal/pi0fast-eval/thor-bf16-tactics.json --autotune \
-  --out devlocal/pi0fast-eval/latency.json
+  --tactics devlocal/model-bench-inputs/pi0fast/thor-bf16-tactics.json --autotune \
+  --out devlocal/model-bench-inputs/pi0fast/latency.json
 ```
 
 Run the same latency check on Thor, Orin and RTX 4090 BF16. On Thor, repeat with
 `--precision fp8` and `--calibration /path/to/matching-calibration.json` for
 FP8. Use a separate output and tactic path for each device and precision.
-Generate the native GEMV/GEMM database with `--autotune` once; omit that flag
-and reuse `--tactics` for subsequent measurements. FP8 calibration is a
-separate artifact. The database's toolkit/device/kernel identity must match
-the tested binary.
+`--autotune` creates the native GEMV/GEMM database; omit that flag and reuse
+`--tactics` for subsequent measurements. FP8 calibration is a separate
+artifact. The database's toolkit/device/kernel identity must match the tested
+binary. To check the original script's default tactic path, omit both tactic
+flags. That baseline can be substantially slower and can generate different
+tokens, so keep its results separate from the tuned run.
 
 To obtain a Prefix / Per Token fit using the original measurement method,
 supply recorded LIBERO frames with varying decode lengths:
@@ -66,8 +69,8 @@ python scripts/bench_pi0_fast.py \
   --state-key observation/state --layer l1 --mode ar \
   --frames /path/to/libero_frames.npz --frame-variant raw \
   --survey 20 --repeats 5 \
-  --tactics devlocal/pi0fast-eval/thor-bf16-tactics.json \
-  --out devlocal/pi0fast-eval/ar.json
+  --tactics devlocal/model-bench-inputs/pi0fast/thor-bf16-tactics.json \
+  --out devlocal/model-bench-inputs/pi0fast/ar.json
 ```
 
 The optional `.npz` must contain camera, state and task arrays in the format
@@ -88,8 +91,8 @@ and writes per-task success rates to the summary.
 apxinf-robo eval-libero --backend in-process \
   --model-dir /models/pi0fast-libero-v044 --precision bf16 \
   --suite libero_10 --trials-per-task 10 --seed 7 \
-  --results-jsonl devlocal/pi0fast-eval/full-results.jsonl \
-  --summary-json devlocal/pi0fast-eval/full-summary.json
+  --results-jsonl devlocal/model-bench-inputs/pi0fast/eval/full-results.jsonl \
+  --summary-json devlocal/model-bench-inputs/pi0fast/eval/full-summary.json
 ```
 
 For server evaluation, run `apxinf-robo serve --robot franka_libero --model-dir
